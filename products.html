@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lily's — Products</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    
+    <header class="site-header">
+        <h1 class="logo">Lily's</h1>
+        <nav class="main-nav">
+            <a href="index.html">Home</a>
+            <a href="products.html">Products</a>
+            <a href="about.html">About</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h2>Our Collection</h2>
+        <p>Explore our products from the online database.</p>
+    </section>
+
+    <section class="catalogue-controls">
+        <input
+            type="text"
+            id="search-box"
+            placeholder="Search products..."
+            aria-label="Search products"
+        >
+
+        <label for="sort-select">Sort by price:</label>
+        <select id="sort-select">
+            <option value="default">Default</option>
+            <option value="low-high">Price: Low to High</option>
+            <option value="high-low">Price: High to Low</option>
+        </select>
+
+        <div id="category-buttons" class="category-buttons"></div>
+    </section>
+    
+ <section class="smart-search-section">
+        <h2>Smart Product Search</h2>
+
+        <input
+            type="text"
+            id="smart-search"
+            placeholder="Try: laptop under 3000"
+            aria-label="Smart product search"
+        >
+
+        <div id="smart-results"></div>
+    </section>
+
+    <section id="product-list" class="product-grid">
+        <p>Loading products...</p>
+    </section>
+
+    <footer class="site-footer">
+        <p>&copy; 2026 Lily's. All rights reserved.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/app.js"></script>
+</body>
+</html> 

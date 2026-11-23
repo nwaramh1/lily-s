@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lily's - Checkout</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        .checkout-container {
+            max-width: 650px;
+            margin: 40px auto;
+            padding: 25px;
+            background: #fff;
+            border-radius: 12px;
+        }
+
+        .checkout-container h1 {
+            text-align: center;
+            color: #174d28;
+        }
+
+        .checkout-container label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        .checkout-container input,
+        .checkout-container textarea {
+            width: 100%;
+            padding: 12px;
+            margin-top: 6px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        .checkout-container button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 25px;
+            background: #075c22;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        #order-total {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="checkout-container">
+
+    <h1>Checkout</h1>
+
+    <form id="checkout-form">
+
+        <label>Full Name</label>
+        <input type="text" id="full-name" required>
+
+        <label>Email</label>
+        <input type="email" id="email" required>
+
+        <label>Shipping Address</label>
+        <textarea id="shipping-address" required></textarea>
+
+        <label>City</label>
+        <input type="text" id="city" required>
+
+        <label>Phone Number</label>
+        <input type="tel" id="phone" required>
+
+        <p id="order-total">Order Total: 0 AED</p>
+
+        <button type="submit" id="place-order">
+            Place Order
+        </button>
+
+    </form>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/app.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", async function () {
+
+    const supabase = window.storeSupabase;
+
+    const form = document.getElementById("checkout-form");
+    const button = document.getElementById("place-order");
+    const totalElement = document.getElementById("order-total");
+
+    let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+
+    const total = cart.reduce(function (sum, item) {
+        return sum + Number(item.price) * Number(item.quantity);
+    }, 0);
+
+    totalElement.textContent = "Order Total: " + total.toFixed(2) + " AED";
+
+    if (!supabase) {
+        alert("Supabase connection is missing.");
+        return;
+    }
+
+    // Check logged-in user
+    const { data: authData, error: authError } =
+        await supabase.auth.getUser();
+
+    if (authError || !authData.user) {
+        alert("Please login first.");
+        window.location.href = "login.html";
+        return;
+    }
+
+    const user = authData.user;
+const { data: sessionData } =
+    await supabase.auth.getSession();
+
+console.log("USER ID:", user.id);
+console.log("SESSION:", sessionData.session);
+console.log("ACCESS TOKEN:", sessionData.session?.access_token);
+
+    // Get customer
+    const { data: customer, error: customerError } =
+        await supabase
+            .from("customer")
+            .select("customer_id, auth_user_id")
+            .eq("auth_user_id", user.id)
+            .single();
+
+    if (customerError || !customer) {
+        console.error(customerError);
+        alert("Customer account not found.");
+        return;
+    }
+
+    // Fill email automatically
+    document.getElementById("email").value = user.email || "";
+
+    form.addEventListener("submit", async function (e) {
+
+        e.preventDefault();
+
+        if (cart.length === 0) {
+            alert("Your cart is empty.");
+            return;}
+
+        button.disabled = true;
+        button.textContent = "Processing...";
+
+        try {
+            // Create order
+            const { data: order, error: orderError } =
+    await window.storeSupabase
+        .from("orderr")
+        .insert([{
+            customer_id: customer.customer_id,
+            total: total,
+            status: "Pending" }])
+        .select("order_id")
+        .single();
+
+            if (orderError) {
+                throw orderError; }
+
+            // Create order items
+            const orderItems = cart.map(function (item) {
+                return {
+                    order_id: order.order_id,
+                    product_id: item.product_id,
+                    quantity: item.quantity,
+                    price: item.price
+                };
+            });
+
+            const { error: itemsError } =
+                await supabase
+                    .from("order_item")
+                    .insert(orderItems);
+
+            if (itemsError) {
+                throw itemsError;
+            }
+
+            // Clear cart
+            localStorage.removeItem("cart");
+
+            alert("Order placed successfully!");
+
+            window.location.href =
+                "order-confirmation.html?id=" + order.order_id;
+
+        } catch (error) {
+
+            console.error("Checkout error:", error);
+            alert("Order error: " + error.message);
+
+            button.disabled = false;
+            button.textContent = "Place Order"; }
+
+    });
+});
+</script>
+
+</body>
+</html>

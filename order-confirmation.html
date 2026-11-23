@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lily's - Order Confirmation</title>
+<link rel="stylesheet" href="css/style.css">
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f7f4;
+    margin: 0;
+    padding: 30px;
+}
+
+.confirmation {
+    max-width: 700px;
+    margin: 40px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+}
+
+h1 {
+    color: #198754;
+    text-align: center;
+}
+
+#items p {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+}
+
+.total {
+    font-size: 20px;
+    font-weight: bold;
+    margin-top: 25px;
+}
+
+.btn {
+    display: block;
+    background: #198754;
+    color: white;
+    padding: 12px;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 6px;
+    margin-top: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="confirmation">
+
+<h1>Order Confirmed!</h1>
+
+<p style="text-align:center">
+Thank you for shopping with Lily's.
+</p>
+
+<p>
+<strong>Order Number:</strong>
+<span id="order-number"></span>
+</p>
+
+<h3>Order Items</h3>
+
+<div id="items">Loading items...</div>
+
+<div class="total">
+Total: <span id="total">0.00</span> AED
+</div>
+
+<a href="index.html" class="btn">Continue Shopping</a>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/app.js"></script>
+
+<script>
+const orderId = new URLSearchParams(window.location.search).get("id");
+
+async function loadConfirmation() {
+
+    document.getElementById("order-number").textContent = orderId || "-";
+
+    if (!orderId) {
+        document.getElementById("items").textContent =
+            "No order ID was provided.";
+        return;}
+
+    const { data: items, error } = await window.storeSupabase
+        .from("order_item")
+        .select("order_item_id, order_id, product_id, quantity, price, product(name)")
+        .eq("order_id", orderId);
+
+    if (error) {
+        document.getElementById("items").textContent =
+            "Could not load order items.";
+        console.error("Confirmation error:", error);
+        return;}
+
+    if (!items || items.length === 0) {
+        document.getElementById("items").textContent =
+            "No items found for this order.";
+        return; }
+
+    let total = 0;
+    document.getElementById("items").innerHTML = items.map(item => {
+        const subtotal = Number(item.price) * Number(item.quantity);
+        total += subtotal;
+        return `
+            <p>
+                <strong>${item.product?.name || "Product"}</strong>
+                × ${item.quantity}
+                <br>
+                Price: AED ${Number(item.price).toFixed(2)}
+                <br>
+                Subtotal: AED ${subtotal.toFixed(2)}
+            </p>
+        `;
+
+    }).join("");
+
+    document.getElementById("total").textContent =
+        total.toFixed(2);
+}
+
+loadConfirmation();
+</script>
+
+</body>
+</html>
